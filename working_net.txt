@@ -1,0 +1,8 @@
+	model = Sequential()
+	# Add a mask_zero=True to the Embedding connstructor if 0 is a left-padding value in your data
+	max_features = NUM_COMPONENTS_IN_SPECTOGRAM
+	model.add(LSTM(max_features, 128, activation='sigmoid', inner_activation='hard_sigmoid'))
+	model.add(Dropout(0.5))
+	model.add(Dense(128, 1))
+	model.add(Activation('sigmoid'))
+	model.compile(loss='binary_crossentropy', optimizer='rmsprop')

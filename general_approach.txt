@@ -1,0 +1,5 @@
+For all speakers:
+	For all files in speaker_files:
+		Process 20 second file into 1 second segments (1 second is approx segment_width=200)
+		Process each 1 second segment into 100 spectograms
+		[100 spectograms] - > Y_Label
