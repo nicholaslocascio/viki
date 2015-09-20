@@ -36,6 +36,9 @@ pip-delete-this-directory.txt
 
 clean_speech/
 speech_files/
+big_speech/
+clean_speech/
+model_temp/
 trained_models/
 
 

@@ -1,0 +1,132 @@
+@import url(http://fonts.googleapis.com/css?family=Economica:400,700);
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Economica', 'Arial', sans-serif;
+  font-size: 18px;
+  background: deepskyblue !important;
+}
+
+.form_container {
+  position: relative;
+  max-width: 40%;
+  min-width: 400px;
+  margin: 0 auto;
+}
+
+form {
+  position: relative;
+  width: 100%;
+  margin: 50px auto;
+  padding: 50px;
+  background: white;
+  text-align: center;
+}
+
+input {
+  display: inline-block;
+  width: 100%;
+  margin: 20px 0;
+  padding: 10px;
+  border: 2px dashed lightblue;
+  outline: none;
+  font-size: 20px;
+  font-family: 'Economica', 'Arial', sans-serif;
+  font-weight: 400;
+  transition: all 0.2s ease;
+}
+
+input:focus { border-color: deepskyblue; }
+
+button {
+  position: absolute;
+  left: calc(50% - 150px / 2);
+  bottom: calc(- 50px / 2);
+  width: 150px;
+  height: 50px;
+  padding: 10px 15px;
+  margin-top: 20px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  color: white;
+  font-family: 'Economica', 'Arial', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  background: mediumblue;
+  transition: all 0.2s ease;
+}
+
+button:hover { background: midnightblue; }
+
+button.valid,
+button.valid:hover { background: mediumseagreen; }
+
+
+@keyframes drawBorder {
+  from {
+    stroke-dasharray: 4000;
+    stroke-dashoffset: 4000;
+  }
+  
+  to {
+    stroke-dasharray: 4000;
+    stroke-dashoffset: 0;
+  }
+}
+
+p {
+  font-color: #888;
+  text-align: center;
+  font-size:14px;
+  font-family: "Helvetica";
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.brand-color {
+  color:#46C7F2 !important;
+}
+
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+
+.btn-file
+{
+  color: #f00;
+  border-color: #f00;
+  border-style: solid;
+  box-shadow: inset 0 3px 4px #888;
+}

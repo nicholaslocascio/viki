@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="form_container">
+  <p>Add New Speaker</p>
+  <form method="post" role="form" enctype="multipart/form-data">
+    <h3>Meeting Info</h3>
+    <input type="text" name="title" placeholder="Meeting Title"/>
+  <h3>Please record your meeting.</h3>
+  <h4>Hit the record button, and hit the pause button when done. Then save the file and upload below.</h4>
+  <br>
+
+  <btn class="btn btn-info" id="record" onclick="toggleRecording(this);">Start Recording</btn>
+  <a id="save" href="#">
+  <btn class="btn btn-success">Save Recording</btn></a>
+  <br>
+  <br>
+<script type="text/javascript" src="{{ url_for('static', filename='main.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='recorderjs/recorder.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='audiodisplay.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='button_feedback.js') }}"></script>
+
+<br>
+<label id="file">Select Meeting Audio File:</label>
+<input class="file" type="file" name="file" id="file">
+<br>
+  <input class="btn btn-lg btn-success" type="submit" value="Upload"></input>
+  </form>
+</div>
+{% endblock %}

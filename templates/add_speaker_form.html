@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="form_container">
+  <form method="post" role="form" enctype="multipart/form-data">
+    <h3>Your details</h3>
+    <input type="text" name="fullname" placeholder="Full Name"/>
+    <div class="form-group">
+      <label for="gender">Select gender:</label>
+      <select name="gender" class="form-control" id="gender">
+      <option value="" disabled selected></option>
+        <option>Female</option>
+        <option>Male</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <input name="email" type="email" placeholder="example@mail.com"/>
+  <h3>Please record an audio sample.</h3>
+  <h4>Hit the record button, read the text below aloud, and hit the pause button when done. Then save the file and upload below.</h4>
+    <br>
+
+  <btn class="btn btn-info" id="record" onclick="toggleRecording(this);">Start Recording</btn>
+  <a id="save" href="#">
+  <btn class="btn btn-success">Save Recording</btn></a>
+  <br>
+  <br>
+<script type="text/javascript" src="{{ url_for('static', filename='main.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='recorderjs/recorder.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='audiodisplay.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='button_feedback.js') }}"></script>
+
+  <p>Let me start by saying that I am very proud to be addressing you today as the students of Toronto University for the last time. In some moments we shall receive the diplomas and become the 2005 graduates of the Linguistics faculty, newly-fledged Masters of Art in Translation. I guess that after the strain of final tests, credits and exams, not to mention the time-consuming graduation theses (and its nerve-racking presentation), most of us were looking forward to this moment, when the studying is over, the diploma is in your pocket and you are free to do what you like. But I want you to look around you and remember this moment. Look at your group-mates and your teachers, because from now on life will scatter us around the world, and most of us will meet only at alumni parties. Recall the best moments of studying that we shared. <br><br> Our first lectures in September, when we came so sun-tanned and so full of summer stories that the teacher had difficulties silencing us up to start the lecture, and we tried hard to write it down with fingers stiff from a long idle vacation time. Remember our coffee breaks, our first collective truancy, when we gathered together and went to play snowballs. Recall your student friends with whom you tried hard to answer the eternal questions and find the sense of life.</p>
+<br>
+<label id="file">Select Audio File:</label>
+<input class="file" type="file" name="file" id="file">
+<br>
+  <input class="btn btn-lg btn-success" type="submit" value="Upload"></input>
+  </form>
+</div>
+{% endblock %}
