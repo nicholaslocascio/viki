@@ -6,24 +6,28 @@ import math
 import pickle
 import sys
 import theano
+import json
 
 sys.setrecursionlimit(200000)
 
-MAX_FILES_PER_SPEAKER = 60
+MAX_FILES_PER_SPEAKER = 2
 
-NUM_COMPONENTS_IN_SPECTOGRAM = 500
-NUM_SPECTOGRAMS_IN_SEQUENCE = 40
-NUM_DATAPOINTS_IN_SPECTOGRAM = 1000 # 
+#NUM_COMPONENTS_IN_SPECTOGRAM = 500
+NUM_COMPONENTS_IN_SPECTOGRAM = 200
+
+NUM_SPECTOGRAMS_IN_SEQUENCE = 20
+NUM_DATAPOINTS_IN_SPECTOGRAM = 400
 NUM_DATAPOINTS_IN_SEQUENCE = NUM_DATAPOINTS_IN_SPECTOGRAM*NUM_SPECTOGRAMS_IN_SEQUENCE
 
 GLOBAL_MODEL = None
 
 #SPEAKER_IDS = [84, 174, 251, 422, 652, 777, 1272]
-SPEAKER_IDS = [103,	1553, 201, 2691, 3235, 3947, 4406, 5192, 6019, 6848, 7511, 8324, 1034, 1578, 2092, 27, 3240, 3982, 441, 5322, 6064, 6880, 7517, 839]
+#SPEAKER_IDS = [103,	1553, 201, 2691, 3235, 3947, 4406, 5192, 6019, 6848, 7511, 8324, 1034, 1578, 2092, 27, 3240, 3982, 441, 5322, 6064, 6880, 7517, 839]
+SPEAKER_IDS = [103, 1553]
 
 #SPEAKER_PATH = 'clean_speech/'
 SPEAKER_PATH = 'big_speech/clean100/'
-
+TRAINED_MODEL_FILE_NAME = 'model_temp/weights.hdf5'
 
 def normalize_outliers(data, m):
     u = np.mean(data)
@@ -38,7 +42,11 @@ def make_spectogram_sequence_matricies_for_file(filename, k_cutoff=NUM_COMPONENT
 	"""Each element is a matrix that is (k_cutoff x MAX_SEQUENCE_LENGTH)."""
 	#filename = 'test2.wav'
 	fs, raw_data = wavfile.read(open(filename, 'r')) # load the data
-	waveform = [(ele/(2.**14)) for ele in raw_data.T] # this is 8-bit track, b is now normalized on [-1,1)
+	if len(raw_data.T) == 2:
+		data = raw_data.T[0]
+	else:
+		data = raw_data.T
+	waveform = [(ele/(2.**14)) for ele in data] # this is 8-bit track, b is now normalized on [-1,1)
 	num_chunks_from_waveform = len(waveform)/(NUM_DATAPOINTS_IN_SEQUENCE)
 	waveform_chunks = [waveform[index*NUM_DATAPOINTS_IN_SEQUENCE:(index+1)*NUM_DATAPOINTS_IN_SEQUENCE] for index in range(num_chunks_from_waveform)]
 	spectogram_sequence_matricies_list = []
@@ -132,6 +140,38 @@ saves the model weights after each epoch if the validation loss decreased
 
 def train_nn(X_train, Y_train, X_test, Y_test):
 	print "train it!"
+	model = create_model_structure()
+	print "ok!"
+	checkpointer = ModelCheckpoint(filepath=TRAINED_MODEL_FILE_NAME, verbose=1, save_best_only=True)
+	model.fit(X_train, Y_train, batch_size=32, nb_epoch=100, verbose=2, validation_data=(X_test, Y_test), callbacks=[checkpointer])
+	score = model.evaluate(X_test, Y_test, batch_size=16)
+	print score
+	print "Saving..."
+
+def process_wav_file_into_input_matrix(waveform):
+	return make_spectogram_sequence_matricies_for_file(waveform)
+
+def predict_waveform(waveform_file_name, model=None, model_file_name='trained_models/small_net'):
+	input_matrix = process_wav_file_into_input_matrix(waveform_file_name)
+	if model == None:
+		model = get_model()
+		print "Loaded model"
+	output = model._predict(input_matrix)
+	print "PREDICTED:", output
+	return output
+
+def get_activations(model, layer, X_batch):
+    X_batch = np.array([X_batch])
+    get_activations = theano.function([model.layers[0].input], model.layers[layer].get_output(train=False), allow_input_downcast=True)
+    activations = get_activations(X_batch) # same result as above
+    return activations
+
+def get_last_layer(model, example):
+	activations = get_activations(model, -2, example)
+	return activations[0]
+
+
+def create_model_structure():
 	final_output_nodes = len(SPEAKER_IDS)
 	#X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.33, random_state=42)
 	model = Sequential()
@@ -143,46 +183,32 @@ def train_nn(X_train, Y_train, X_test, Y_test):
 	model.add(Dense(512, final_output_nodes))
 	model.add(Activation('softmax'))
 	model.compile(loss='categorical_crossentropy', optimizer='rmsprop', class_mode="categorical")
-	print "ok!"
-	checkpointer = ModelCheckpoint(filepath="model_temp/weights.hdf5", verbose=1, save_best_only=True)
-	model.fit(X_train, Y_train, batch_size=32, nb_epoch=100, verbose=2, validation_data=(X_test, Y_test), callbacks=[checkpointer])
-	score = model.evaluate(X_test, Y_test, batch_size=16)
-	print score
-	print "Saving..."
-	fileObject = open('trained_models/small_net','wb') 
-	pickle.dump(model, fileObject)
+	return model
 
-def process_wav_file_into_input_matrix(waveform):
-	return make_spectogram_sequence_matricies_for_file(waveform)
-
-def predict_waveform(waveform_file_name, model=None, model_file_name='trained_models/small_net'):
-	input_matrix = process_wav_file_into_input_matrix(waveform_file_name)
-	if model == None:
-		model_file = open(model_file_name,'rb')
-		model = pickle.load(model_file)
-		model_file.close()
-	print "Loaded model"
-	output = model._predict(input_matrix)
-	print "PREDICTED:", output
-	return output
-
-def get_activations(model, layer, X_batch):
-    get_activations = theano.function([model.layers[0].input], model.layers[layer].get_output(train=False), allow_input_downcast=True)
-    activations = get_activations(X_batch) # same result as above
-    return activations
-
-def get_last_layer(model, example):
-	activations = get_activations(model, -1, example)
-
-def predict_waveform_nearest_neighbor(waveform_file_name, candidates_vector_map, model=None, model_file_name='trained_models/small_net'):
+def predict_waveform_nearest_neighbor(waveform_file_name, model=None, model_file_name=TRAINED_MODEL_FILE_NAME):
 	input_matrix = process_wav_file_into_input_matrix(waveform_file_name)
 	if model == None:
 		model = get_model()
-	print "Loaded model"
-	output = model._predict(input_matrix)
-	last_layer = get_last_layer(model)
-	print "Last Layer:", last_layer
-	return output
+		print "Loaded model"
+	last_layer = get_last_layer(model, input_matrix)
+	query_vector = last_layer
+	candidate_vector_map = get_candidates_vector_map()
+	prediction = get_closest_speaker(query_vector, candidate_vector_map)
+	print "Prediction:", prediction
+	return prediction
+
+def predict_waveform_nearest_neighbor_matrix(input_matrix, model=None, model_file_name=TRAINED_MODEL_FILE_NAME):
+	if model == None:
+		model = get_model()
+		print "Loaded model"
+	# import pdb
+	# pdb.set_trace()
+	last_layer = get_last_layer(model, input_matrix)
+	query_vector = last_layer
+	candidate_vector_map = get_candidates_vector_map()
+	prediction = get_closest_speaker(query_vector, candidate_vector_map)
+	print "Prediction:", prediction
+	return prediction
 
 def split_data(X, Y, test_size=0.2, random_state=0):
 	random.seed(random_state)
@@ -219,14 +245,12 @@ def train_on_dataset():
 	print len(X_test), len(Y_test)
 	train_nn(X_train, Y_train, X_test, Y_test)
 
-
-
-def get_model():
+def get_model(filename=TRAINED_MODEL_FILE_NAME):
 	global GLOBAL_MODEL
-	if GLOBAL_MODEL == None:
-		model_file = open(model_file_name,'rb')
-		GLOBAL_MODEL = pickle.load(model_file)
-		model_file.close()
+	if GLOBAL_MODEL:
+		return GLOBAL_MODEL
+	GLOBAL_MODEL = create_model_structure()
+	GLOBAL_MODEL.load_weights(filename)
 	return GLOBAL_MODEL
 
 def get_vectors_for_file_names(file_names):
@@ -234,33 +258,99 @@ def get_vectors_for_file_names(file_names):
 		model
 
 def get_all_new_predictions_for_meeting(file_name):
-	
+	predictions = []
+	input_matricies = process_wav_file_into_input_matrix(file_name)
+	ave_sounds = process_wav_file_into_sounds(file_name)
+	print "done processing!", len(ave_sounds), len(input_matricies)
+	for matrix, sound in zip(input_matricies, ave_sounds):
+		print "sound"
+		if sound > 0.0001:
+			prediction = predict_waveform_nearest_neighbor_matrix(matrix)
+			print "did prediction"
+			predictions.append(prediction)
+		else:
+			predictions.append(-1)
+	return predictions
 
-def get_best_prediction(new_sample):
+def process_wav_file_into_sounds(filename):
+	#filename = 'test2.wav'
+	fs, raw_data = wavfile.read(open(filename, 'r')) # load the data
+	if len(raw_data.T) == 2:
+		data = raw_data.T[0]
+	else:
+		data = raw_data.T
+	waveform = [(ele/(2.**14)) for ele in data] # this is 8-bit track, b is now normalized on [-1,1)
+	num_chunks_from_waveform = len(waveform)/(NUM_DATAPOINTS_IN_SEQUENCE)
+	waveform_chunks = [waveform[index*NUM_DATAPOINTS_IN_SEQUENCE:(index+1)*NUM_DATAPOINTS_IN_SEQUENCE] for index in range(num_chunks_from_waveform)]
+	sounds = []
+	print "wattup"
+	for chunk in waveform_chunks:
+		sounds.append(sum([abs(chunker) for chunker in chunk])/(1.0*len(chunk)))
+	return sounds
 
-def get_candidate_vector_map():
-	candidate_map = {
-	"0": {"name": "Harini Suresh", "sex": "F", "file": "harini.wav"},
-	"1": {"name": "Nick Locascio", "sex": "M", "file": "nick.wav"},
-	"2": {"name": "Nadia Wallace", "sex": "F", "file": "nadia.wav"},
-	"3": {"name": "X", "sex": "M", "file": "nick.wav"},
-	}
-	candidate_files = {speaker_id : ob["file"] for speaker_id, ob in candidate_map.iteritems()}
+def get_ave_vector_from_file_name(file_name):
+	input_matricies = process_wav_file_into_input_matrix(file_name)
+	ave_vector = np.zeros(500)
+	model = get_model()
+	print "Loaded model"
+	for matrix in input_matricies:
+		last_layer = get_last_layer(model, matrix)
+		for i in range(len(last_layer)):
+			ave_vector[i] += last_layer[i]
+	return ave_vector/len(ave_vector)
+
+SPEAKER_DATA_PATH = 'data/speakers.json'
+candidates_vector_map = None
+def get_candidates_vector_map():
+	global candidates_vector_map
+	if candidates_vector_map:
+		return candidates_vector_map
+
+	with open('data/speakers.json') as data_file:   
+		candidate_map = json.load(data_file)
+	candidate_files = {speaker_id : ob["filename"] for speaker_id, ob in candidate_map.iteritems()}
 	candidate_vector_averages = {}
 	for speaker_id, file_name in candidate_files.iteritems():
-		ave_vector = get_ave_vector_from_file()
-		candidate_vector_averages["speaker_id"] = ave_vector
+		ave_vector = get_ave_vector_from_file_name(file_name)
+		candidate_vector_averages[speaker_id] = ave_vector
 	return candidate_vector_averages
 
-def get_closest_speaker(query, candidate_vector_map):
+def distance(x, y):
+	return abs(x-y)**2.0
+
+def get_closest_speaker(query, candidates_vector_averages):
 	dists = []
-	for speaker_id, vector in candidate_vector_map.iteritems():
+	for speaker_id, vector in candidates_vector_averages.iteritems():
 		dists.append((distance(vector, query), speaker_id))
+	print "min is:", min(dists, key=lambda x: x[0])
 	return min(dists, key=lambda x: x[0])[1]
 
-
+def get_interruptions(predictions):
+	past = None
+	streak = 0
+	interruptions = []
+	for prediction in predictions:
+		if past == prediction:
+			streak += 1
+		else:
+			if streak > 4:
+				if past != -1:
+					interruption = (past, prediction)
+					interruptions.append(interruption)
+			streak = 0
+			past = prediction
+	return interruptions
 
 #train_on_dataset()
-predict_waveform_nearest_neighbor('test_251.wav', candidates_vector_map, model=None, model_file_name='trained_models/small_net'):
-#predicted = predict_waveform('test_251.wav')
+#predict_waveform_nearest_neighbor('test_251.wav', candidates_vector_map, model=None, model_file_name='trained_models/small_net'):
+# predicted = predict_waveform('test_251.wav')
+#predict = predict_waveform_nearest_neighbor('harini.wav')
+#predictions = get_all_new_predictions_for_meeting('harini.wav')
+#print predict
+#print get_all_new_predictions_for_meeting('harini.wav')
+
+
+if __name__ == "__main__":
+	train_on_dataset()
+    #print get_all_new_predictions_for_meeting('harini.wav')
 

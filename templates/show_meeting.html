@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="form_container">
+  <form method="post" role="form" enctype="multipart/form-data">
+  <h1>{{meeting["title"]}}</h1>
+    <h1>Particpant Breakdown</h1>
+  {% for meet in meeting["percentages"] %}
+    <div class=flash>{{ meet[1]["username"] }}: {{meet[0]}}%</div>
+  {% endfor %}
+  <br>
+  <h1>Gender Breakdown</h1>
+        <div class=flash> Females Interrupting Males: <span>{{ meeting["interruptions"][0]}}%</div>
+        <div class=flash> Females Interrupting Females: {{ meeting["interruptions"][1]}}%</div>
+        <div class=flash> Males Interrupting Females: {{ meeting["interruptions"][2]}}%</div>
+        <div class=flash> Males Interrupting Males: {{ meeting["interruptions"][3]}}%</div>
+</form>
+</div>
+{% endblock %}

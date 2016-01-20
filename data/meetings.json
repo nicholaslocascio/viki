@@ -1,8 +1,42 @@
 {
-	"meetings": [
-		{
-			"speakers":[],
-			"interruptions":[],
-		}
-	]
+    "0": {
+        "title": "Important meeting for Investors",
+        "percentages": [
+            [
+                "18.6",
+                {
+                    "username": "Nick Locascio",
+                    "gender": "Male"
+                }
+            ],
+            [
+                "33.4",
+                {
+                    "username": "Harini Suresh",
+                    "gender": "Female"
+                }
+            ],
+            [
+                "25.4",
+                {
+                    "username": "Nadia Wallace",
+                    "gender": "Female"
+                }
+            ],
+            [
+                "10.4",
+                {
+                    "username": "Kate Candon",
+                    "gender": "Female"
+                }
+            ]
+        ],
+        "interruptions": [
+            "25",
+            "75",
+            "100",
+            "0"
+        ],
+        "interruptions_count": "12"
+    }
 }
